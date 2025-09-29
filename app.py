@@ -1,4 +1,7 @@
+from dotenv import load_dotenv
+import os
 import streamlit as st
+
 from pathlib import Path
 
 from config import APP_TITLE, START_EQ_DATE, FRED_SERIES
@@ -10,6 +13,28 @@ from panels.options_panel import render_options_panel
 from panels.timeseries_panel import render_base_charts, render_mmf_section
 from panels.csp_scanner_panel import render_csp_scanner
 from panels.csp_score_panel import render_csp_score_panel
+
+from dotenv import load_dotenv
+load_dotenv()
+def get_secret(name: str, default: str = "") -> str:
+    """Prefer env var; if missing, try Streamlit secrets; otherwise default."""
+    # 1) local dev: .env / environment
+    val = os.getenv(name)
+    if val:
+        return val
+    # 2) cloud: st.secrets (guarded to avoid parsing when file not present)
+    try:
+        return st.secrets[name]  # will work on Streamlit Cloud
+    except Exception:
+        return default
+
+FRED_API_KEY = get_secret("FRED_API_KEY", "")
+if not (len(FRED_API_KEY) == 32 and FRED_API_KEY.isalnum() and FRED_API_KEY.islower()):
+    st.error(
+        "FRED API key missing/invalid. Set it in a local `.env` (FRED_API_KEY=...) "
+        "or in Streamlit Cloud → Settings → Secrets."
+    )
+    st.stop()
 
 st.cache_data.clear()
 st.set_page_config(page_title="Market Risk Dashboard", page_icon="📊", layout="wide")
@@ -24,7 +49,7 @@ if FRED is None:
 with st.sidebar:
     st.subheader("Settings")
     st.caption("Data refresh ~every 30 minutes (cached).")
-    st.write("FRED key loaded (masked):", API_KEY[:4] + "..." + API_KEY[-4:])
+    st.write("FRED key loaded (masked):", FRED_API_KEY[:4] + "..." + FRED_API_KEY[-4:])
     st.markdown("---")
     auto_mmf = st.toggle("Auto-download ICI MMF flows", value=True)
     st.caption("If off, upload the file below.")
