@@ -9,9 +9,9 @@ from panels.forecast_panel import render_forecast_panel
 from panels.options_panel import render_options_panel
 from panels.timeseries_panel import render_base_charts, render_mmf_section
 from panels.csp_scanner_panel import render_csp_scanner
+from panels.csp_score_panel import render_csp_score_panel
 
-
-
+st.cache_data.clear()
 st.set_page_config(page_title="Market Risk Dashboard", page_icon="📊", layout="wide")
 st.title(APP_TITLE)
 
@@ -50,9 +50,9 @@ render_forecast_panel(metrics)
 extra = load_extra_series()
 render_options_panel(extra, spy_trend=metrics["spy_trend"])
 
-
-# ... inside app layout, after other panels:
 render_csp_scanner()
+
+render_csp_score_panel()
 
 render_base_charts(m1, m2, y10, spx, vix)
 render_mmf_section(auto_mmf, mmf_file)

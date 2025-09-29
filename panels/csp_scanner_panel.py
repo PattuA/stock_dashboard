@@ -160,12 +160,14 @@ def render_csp_scanner():
         watchlist = st.text_input(
             "Tickers (comma-separated)",
             value="SPY, QQQ, IWM, AAPL, MSFT, NVDA, AMD, TSLA, META, GOOGL, AMZN, JPM, BAC, XOM, KO, PEP, WMT, COST, ORCL, CRM",
+            key="csp_scan_watchlist",
         )
-        target_dte = st.slider("Target DTE (days)", 7, 60, 30, step=1)
-        target_delta = st.slider("Target put delta", 0.05, 0.40, 0.20, step=0.01)
-        min_oi = st.number_input("Min open interest (filter)", min_value=0, value=50, step=10)
-        max_spread_pct = st.slider("Max bid–ask spread %", 0.0, 10.0, 6.0, step=0.5)
-        exclude_earnings_days = st.slider("Exclude if earnings within (days)", 0, 30, 7, step=1)
+        target_dte = st.slider("Target DTE (days)", 7, 60, 30, step=1, key="csp_scan_dte")
+        target_delta = st.slider("Target put delta", 0.05, 0.40, 0.20, step=0.01, key="csp_scan_delta")
+        min_oi = st.number_input("Min open interest (filter)", min_value=0, value=50, step=10, key="csp_scan_min_oi")
+        max_spread_pct = st.slider("Max bid–ask spread %", 0.0, 10.0, 6.0, step=0.5, key="csp_scan_spread")
+        exclude_earnings_days = st.slider("Exclude if earnings within (days)", 0, 30, 7, step=1, key="csp_scan_excl_earn")
+
 
     tickers = [t.strip().upper() for t in watchlist.split(",") if t.strip()]
 
