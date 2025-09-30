@@ -1,23 +1,33 @@
-"""
-Risk heat map buckets + composite macro risk score.
-"""
+"""Risk heat map buckets and composite macro risk score."""
+
+from __future__ import annotations
 
 import pandas as pd
+
 from config import THRESHOLDS
 from compute.metrics import pct_change_yoy, trend_slope_percent
 
+
 def color_chip(level: str) -> str:
-    return {"Green":"🟢 Green", "Yellow":"🟡 Yellow", "Red":"🔴 Red"}[level]
+    chips = {"Green": "Green", "Yellow": "Yellow", "Red": "Red"}
+    return chips.get(level, level)
+
 
 def risk_bucket_high_bad(value, green_max, yellow_max):
-    if value <= green_max: return "Green"
-    elif value <= yellow_max: return "Yellow"
+    if value <= green_max:
+        return "Green"
+    if value <= yellow_max:
+        return "Yellow"
     return "Red"
 
+
 def risk_bucket_low_bad(value, yellow_min, green_min):
-    if value >= green_min: return "Green"
-    elif value >= yellow_min: return "Yellow"
+    if value >= green_min:
+        return "Green"
+    if value >= yellow_min:
+        return "Yellow"
     return "Red"
+
 
 def score_panel(m1: pd.Series, m2: pd.Series, y10: pd.Series, spx: pd.Series, vix: pd.Series):
     m1_yoy = pct_change_yoy(m1)
@@ -41,22 +51,24 @@ def score_panel(m1: pd.Series, m2: pd.Series, y10: pd.Series, spx: pd.Series, vi
     ]
     return pd.DataFrame(rows), {"m1_yoy": m1_yoy, "m2_yoy": m2_yoy, "y10": y10_last, "vix": vix_last, "spy_trend": spy_trend}
 
+
 def composite_risk_score(y10, y2, vix, claims, spread, dxy_level, spy_trend):
-    """Rough normalization to 0–100 (higher = riskier)."""
-    import math
-    score, n = 0.0, 0
+    """Rough normalization to 0-100 (higher = riskier)."""
+    score = 0.0
+    count = 0
 
-    def add(x): 
-        nonlocal score, n
-        if pd.notna(x): score += x; n += 1
+    def add(value):
+        nonlocal score, count
+        if pd.notna(value):
+            score += value
+            count += 1
 
-    import pandas as pd  # local import to avoid circulars
     add(min(100.0, (y10 - 3.5) * 40.0) if pd.notna(y10) else None)
-    add(min(100.0, (y2  - 3.5) * 40.0) if pd.notna(y2)  else None)
+    add(min(100.0, (y2 - 3.5) * 40.0) if pd.notna(y2) else None)
     add(min(100.0, (vix - 15.0) * 5.0) if pd.notna(vix) else None)
     add(min(100.0, (claims / 250000.0 - 1.0) * 100.0) if pd.notna(claims) else None)
     add(min(100.0, spread * 20.0) if pd.notna(spread) else None)
     add(min(100.0, (dxy_level / 100.0 - 1.0) * 50.0) if pd.notna(dxy_level) else None)
     add(max(0.0, -spy_trend * 20.0) if pd.notna(spy_trend) else None)
 
-    return round(score / n, 1) if n else float("nan")
+    return round(score / count, 1) if count else float("nan")

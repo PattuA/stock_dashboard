@@ -62,7 +62,7 @@ def _norm_cdf(x: float) -> float:
     return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
 
 def put_delta_bs(spot: float, strike: float, t_years: float, r: float, iv: float) -> float:
-    """Black–Scholes put delta (negative in [-1,0])."""
+    """Black-Scholes put delta (negative in [-1,0])."""
     if spot <= 0 or strike <= 0 or t_years <= 0 or iv <= 0:
         return float("nan")
     d1 = (math.log(spot/strike) + (r + 0.5*iv*iv)*t_years) / (iv*math.sqrt(t_years))
@@ -207,7 +207,7 @@ def csp_attractiveness(
     r_annual: float = 0.02,
 ) -> Dict[str, float | str]:
     """
-    Returns a dict with suggested expiry/strike and a 0–100 score broken down by components.
+    Returns a dict with suggested expiry/strike and a 0-100 score broken down by components.
     Components:
       - Premium Richness: ATM IV (normalized)
       - Liquidity: spread% and OI of chosen contract
@@ -278,10 +278,11 @@ def csp_attractiveness(
     saf = 0.5 * saf_buffer + 0.3 * saf_atr + 0.2 * saf_ma
     # Market regime: contango (3M-1M) and breadth slope
     mr_contango = float(np.clip((contango - 0.5) / (4.0 - 0.5), 0, 1))   # 0.5..4.0 pts
-    mr_breadth  = float(np.clip((breadth_slope + 0.5) / (1.5), 0, 1))    # -0.5..+1.0 %
+    mr_breadth = float(np.clip((breadth_slope + 0.5) / 1.5, 0, 1))  # -0.5..+1.0 %
+
     mr = 0.6 * mr_contango + 0.4 * mr_breadth
 
-    # Weights → total score
+    # Weights -> total score
     total = 100.0 * (0.40 * pr + 0.20 * liq + 0.25 * saf + 0.15 * mr)
 
     stance = (

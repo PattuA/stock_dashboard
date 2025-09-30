@@ -1,26 +1,57 @@
-import streamlit as st, pandas as pd
+from __future__ import annotations
+
+from typing import Dict, Optional
+
+import pandas as pd
+import streamlit as st
+
+from compute.risk_scoring import composite_risk_score
 from loaders.fred_loader import load_extra_series
 from loaders.yf_loader import load_dxy
-from compute.risk_scoring import composite_risk_score
 
-def render_forecast_panel(metrics):
-    st.subheader("🔮 Forecast Panel (Macro + Market Mix)")
-    extra = load_extra_series()
+
+def _latest(series: Optional[pd.Series]) -> float:
+    if series is None or series.empty:
+        return float("nan")
+    cleaned = series.dropna()
+    if cleaned.empty:
+        return float("nan")
+    value = cleaned.iloc[-1]
+    try:
+        value = value.item()
+    except AttributeError:
+        pass
+    except ValueError:
+        pass
+    return float(value)
+
+
+def render_forecast_panel(metrics, extra: Optional[Dict[str, pd.Series]] = None) -> None:
+    st.subheader("Macro Forecast Panel")
+    extra = extra or load_extra_series()
     dxy = load_dxy()
-    dxy_last = dxy.iloc[-1].item() if not dxy.empty else float("nan")
+    dxy_last = _latest(dxy)
     if not dxy.empty:
-        st.line_chart(dxy)  # already named "DXY"
+        st.line_chart(dxy)
     else:
-        st.write("No DXY data")
+        st.write("No DXY data available.")
 
     y10_last = metrics["y10"]
     spy_trend = metrics["spy_trend"]
-    y2_last = extra["2Y"].dropna().iloc[-1].item() if "2Y" in extra and not extra["2Y"].empty else float("nan")
-    claims_last = extra["Claims"].dropna().iloc[-1].item() if "Claims" in extra and not extra["Claims"].empty else float("nan")
-    lei_last = extra["LEI"].dropna().iloc[-1].item() if "LEI" in extra and not extra["LEI"].empty else float("nan")
-    spread_last = extra["BaaSpread"].dropna().iloc[-1].item() if "BaaSpread" in extra and not extra["BaaSpread"].empty else float("nan")
+    y2_last = _latest(extra.get("2Y") if extra else None)
+    claims_last = _latest(extra.get("Claims") if extra else None)
+    lei_last = _latest(extra.get("LEI") if extra else None)
+    spread_last = _latest(extra.get("BaaSpread") if extra else None)
 
-    risk_score = composite_risk_score(y10_last, y2_last, metrics["vix"], claims_last, spread_last, dxy_last, spy_trend)
+    risk_score = composite_risk_score(
+        y10_last,
+        y2_last,
+        metrics["vix"],
+        claims_last,
+        spread_last,
+        dxy_last,
+        spy_trend,
+    )
 
     c1, c2, c3 = st.columns(3)
     c1.metric("2Y Yield", f"{y2_last:.2f}%" if pd.notna(y2_last) else "N/A")
@@ -33,31 +64,34 @@ def render_forecast_panel(metrics):
     d3.metric("Composite Risk Score", f"{risk_score:.1f}/100" if pd.notna(risk_score) else "N/A")
 
     st.markdown("**Macro Indicators (Recent)**")
-    colX, colY = st.columns(2)
-    with colX:
+    col_left, col_right = st.columns(2)
+    with col_left:
         st.markdown("**2Y Treasury Yield**")
-        if "2Y" in extra and not extra["2Y"].empty:
-            st.line_chart(extra["2Y"])
+        series_2y = extra.get("2Y") if extra else None
+        if series_2y is not None and not series_2y.empty:
+            st.line_chart(series_2y)
         else:
-            st.write("No 2Y data")
+            st.write("No 2Y data available.")
 
         st.markdown("**Unemployment Claims**")
-        if "Claims" in extra and not extra["Claims"].empty:
-            st.line_chart(extra["Claims"].rename("Weekly Claims"))
+        series_claims = extra.get("Claims") if extra else None
+        if series_claims is not None and not series_claims.empty:
+            st.line_chart(series_claims.rename("Weekly Claims"))
         else:
-            st.write("No Claims data")
+            st.write("No claims data available.")
 
-    with colY:
-        st.markdown("**Baa – 10Y Treasury Spread**")
-        if "BaaSpread" in extra and not extra["BaaSpread"].empty:
-            st.line_chart(extra["BaaSpread"].rename("Baa-10Y Spread"))
+    with col_right:
+        st.markdown("**Baa - 10Y Treasury Spread**")
+        series_spread = extra.get("BaaSpread") if extra else None
+        if series_spread is not None and not series_spread.empty:
+            st.line_chart(series_spread.rename("Baa-10Y Spread"))
         else:
-            st.write("No Spread data")
+            st.write("No spread data available.")
 
         st.markdown("**US Dollar Index (DXY)**")
         if not dxy.empty:
             st.line_chart(dxy)
         else:
-            st.write("No DXY data")
+            st.write("No DXY data available.")
 
     st.markdown("---")

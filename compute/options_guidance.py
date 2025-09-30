@@ -1,5 +1,5 @@
 """
-Heuristics that translate market inputs → aggressiveness for
+Heuristics that translate market inputs -> aggressiveness for
 Cash-Secured Puts (CSP) and Covered Calls (CC).
 Outputs stance, target strike delta, and DTE window.
 """
@@ -58,11 +58,11 @@ def csp_guidance(vix, vix3m, spy_trend, breadth_trend, baa_spread):
         0.10*credit_score(baa_spread)
     )
     if s >= 0.75:
-        level, delta, dte, note = "Aggressive", 0.30, "7–14 days", "Good premium, stable structure"
+        level, delta, dte, note = "Aggressive", 0.30, "7-14 days", "Good premium, stable structure"
     elif s >= 0.50:
-        level, delta, dte, note = "Moderate", 0.20, "14–30 days", "Mixed signals"
+        level, delta, dte, note = "Moderate", 0.20, "14-30 days", "Mixed signals"
     else:
-        level, delta, dte, note = "Defensive", 0.10, "30–45 days", "Elevated risk / weak structure"
+        level, delta, dte, note = "Defensive", 0.10, "30-45 days", "Elevated risk / weak structure"
     return {"score": round(s*100), "level": level, "delta": delta, "dte": dte, "note": note}
 
 def cc_guidance(vix, vix3m, spy_trend, breadth_trend, baa_spread):
@@ -75,9 +75,9 @@ def cc_guidance(vix, vix3m, spy_trend, breadth_trend, baa_spread):
         0, 1
     )
     if s >= 0.75:
-        level, delta, dte, note = "Aggressive", 0.35, "7–14 days", "Choppy/weak trend; rich call premium"
+        level, delta, dte, note = "Aggressive", 0.35, "7-14 days", "Choppy/weak trend; rich call premium"
     elif s >= 0.50:
-        level, delta, dte, note = "Moderate", 0.25, "14–30 days", "Mixed; balance income vs upside"
+        level, delta, dte, note = "Moderate", 0.25, "14-30 days", "Mixed; balance income vs upside"
     else:
-        level, delta, dte, note = "Defensive", 0.15, "21–45 days", "Strong uptrend / limited premium"
+        level, delta, dte, note = "Defensive", 0.15, "21-45 days", "Strong uptrend / limited premium"
     return {"score": round(s*100), "level": level, "delta": delta, "dte": dte, "note": note}
