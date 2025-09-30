@@ -18,7 +18,7 @@ def render_options_panel(extra, spy_trend):
     cc  = cc_guidance(vix_last, vix3m_last, spy_trend, breadth_trend, baa_last)
 
     left, right = st.columns(2)
-    with left:
+    with right:
         st.markdown("### 💵 Cash-Secured Puts")
         st.metric("CSP Score", f"{csp['score']:.0f}/100")
         st.write(f"**Stance:** {csp['level']}")
@@ -26,7 +26,7 @@ def render_options_panel(extra, spy_trend):
         st.write(f"**Suggested DTE:** {csp['dte']}")
         st.caption(csp["note"])
 
-    with right:
+    with left:
         st.markdown("### 📈 Covered Calls")
         st.metric("CC Score", f"{cc['score']:.0f}/100")
         st.write(f"**Stance:** {cc['level']}")
