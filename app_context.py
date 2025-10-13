@@ -71,6 +71,13 @@ def build_sidebar(fred_key: str) -> Tuple[bool, st.runtime.uploaded_file_manager
             type=["csv", "xls", "xlsx"],
             key="mmf_file_uploader",
         )
+        st.divider()
+        st.subheader("Quick Links")
+        st.page_link("app.py", label="Option Aggressiveness")
+        st.page_link("pages/1_Risk_Heatmap.py", label="Risk Heatmap")
+        st.page_link("pages/2_Macro_Forecast.py", label="Macro Forecast")
+        st.page_link("pages/6_Event_Risk_Calendar.py", label="Event Risk Calendar")
+        st.page_link("pages/7_Wheel_Readiness.py", label="Wheel Readiness Heatmap")
     return auto_mmf, mmf_file
 
 

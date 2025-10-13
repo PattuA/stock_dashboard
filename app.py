@@ -18,6 +18,7 @@ def render_navigation() -> None:
         st.page_link("pages/3_Core_Time_Series.py", label="Core Time Series")
         st.page_link("pages/4_MMF_Flows.py", label="MMF Flows")
         st.page_link("pages/5_CSP_Scanner.py", label="CSP Scanner")
+        st.page_link("pages/7_Wheel_Readiness.py", label="Wheel Readiness Heatmap")
 
 
 def main() -> None:

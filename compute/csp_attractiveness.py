@@ -68,6 +68,14 @@ def put_delta_bs(spot: float, strike: float, t_years: float, r: float, iv: float
     d1 = (math.log(spot/strike) + (r + 0.5*iv*iv)*t_years) / (iv*math.sqrt(t_years))
     return _norm_cdf(d1) - 1.0
 
+
+def call_delta_bs(spot: float, strike: float, t_years: float, r: float, iv: float) -> float:
+    """Black-Scholes call delta (0..1)."""
+    if spot <= 0 or strike <= 0 or t_years <= 0 or iv <= 0:
+        return float("nan")
+    d1 = (math.log(spot/strike) + (r + 0.5 * iv * iv) * t_years) / (iv * math.sqrt(t_years))
+    return _norm_cdf(d1)
+
 # --------------------------
 # Data helpers
 # --------------------------
@@ -197,6 +205,52 @@ def pick_put_by_delta(puts: pd.DataFrame, spot: float, expiry: str,
     df["delta_diff"] = (df["delta"] - target_delta).abs()
     return df.sort_values(["delta_diff", "spread_pct"]).iloc[0]
 
+
+def pick_call_by_delta(
+    calls: pd.DataFrame, spot: float, expiry: str, target_delta: float, r_annual: float = 0.02
+) -> Optional[pd.Series]:
+    if calls is None or calls.empty or spot <= 0:
+        return None
+    try:
+        exp = datetime.strptime(expiry, "%Y-%m-%d")
+        t_years = max(1e-6, (exp - datetime.now()).days / 365.25)
+    except Exception:
+        return None
+
+    rows = []
+    for _, row in calls.iterrows():
+        k = float(row.get("strike", np.nan))
+        iv = float(row.get("impliedVolatility", np.nan))
+        bid = float(row.get("bid", np.nan))
+        ask = float(row.get("ask", np.nan))
+        oi = float(row.get("openInterest", np.nan))
+        vol = float(row.get("volume", np.nan))
+        if not (np.isfinite(k) and np.isfinite(iv) and iv > 0 and np.isfinite(bid) and np.isfinite(ask)):
+            continue
+        delta = call_delta_bs(spot, k, t_years, r_annual, iv)
+        if not np.isfinite(delta):
+            continue
+        mid = (bid + ask) / 2.0 if (bid > 0 and ask > 0) else np.nan
+        spr = (ask - bid) / ask * 100.0 if ask > 0 else np.nan
+        rows.append(
+            {
+                "strike": k,
+                "iv": iv,
+                "delta": delta,
+                "bid": bid,
+                "ask": ask,
+                "mid": mid,
+                "spread_pct": spr,
+                "oi": oi,
+                "vol": vol,
+            }
+        )
+    if not rows:
+        return None
+    df = pd.DataFrame(rows)
+    df["delta_diff"] = (df["delta"] - target_delta).abs()
+    return df.sort_values(["delta_diff", "spread_pct"]).iloc[0]
+
 # --------------------------
 # Main scoring
 # --------------------------
@@ -315,4 +369,48 @@ def csp_attractiveness(
         "score_safety": round(100 * saf, 1),
         "score_regime": round(100 * mr, 1),
         "stance": stance,
+    }
+
+
+def covered_call_suggestion(
+    symbol: str,
+    target_dte: int = 30,
+    target_delta: float = 0.25,
+    r_annual: float = 0.02,
+) -> Dict[str, float | str]:
+    tkr = yf.Ticker(symbol)
+    spot = _safe_last_price(symbol)
+    if not np.isfinite(spot) or spot <= 0:
+        return {"ok": False, "msg": "Unable to fetch last price"}
+
+    expirations = list(getattr(tkr, "options", []))
+    expiry = pick_expiration(expirations, target_dte)
+    if not expiry:
+        return {"ok": False, "msg": "No expiry available"}
+
+    chain = tkr.option_chain(expiry)
+    calls = getattr(chain, "calls", None)
+    pick = pick_call_by_delta(calls, spot, expiry, target_delta, r_annual=r_annual)
+    if pick is None:
+        return {"ok": False, "msg": "No suitable call found"}
+
+    strike = float(pick["strike"])
+    delta = float(pick["delta"])
+    mid = float(pick["mid"]) if np.isfinite(pick.get("mid", np.nan)) else np.nan
+    spread_pct = float(pick["spread_pct"]) if np.isfinite(pick.get("spread_pct", np.nan)) else np.nan
+    oi = int(float(pick["oi"])) if np.isfinite(pick.get("oi", np.nan)) else 0
+
+    perc_otm = (strike / spot - 1.0) * 100.0
+
+    return {
+        "ok": True,
+        "symbol": symbol,
+        "price": round(spot, 2),
+        "expiry": expiry,
+        "strike": round(strike, 2),
+        "delta": round(delta, 2),
+        "mid": round(mid, 2) if np.isfinite(mid) else np.nan,
+        "spread_%": round(spread_pct, 2) if np.isfinite(spread_pct) else np.nan,
+        "OI": oi,
+        "%OTM": round(perc_otm, 2) if np.isfinite(perc_otm) else np.nan,
     }
