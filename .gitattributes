@@ -1,0 +1,12 @@
+* text=auto
+
+# Enforce LF for cross-platform text files
+*.py   text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.txt  text eol=lf
+
+# Windows-native scripts keep CRLF
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
