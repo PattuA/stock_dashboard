@@ -13,3 +13,6 @@ venv/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Allow example secrets to be tracked
+!.streamlit/secrets.toml.example
