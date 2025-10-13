@@ -11,10 +11,11 @@ def render_navigation() -> None:
     st.markdown("### Explore Pages")
     col1, col2 = st.columns(2)
     with col1:
+        st.page_link("app.py", label="Option Aggressiveness")
         st.page_link("pages/1_Risk_Heatmap.py", label="Risk Heatmap")
         st.page_link("pages/2_Macro_Forecast.py", label="Macro Forecast")
-        st.page_link("pages/3_Core_Time_Series.py", label="Core Time Series")
     with col2:
+        st.page_link("pages/3_Core_Time_Series.py", label="Core Time Series")
         st.page_link("pages/4_MMF_Flows.py", label="MMF Flows")
         st.page_link("pages/5_CSP_Scanner.py", label="CSP Scanner")
 

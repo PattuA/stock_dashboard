@@ -35,38 +35,48 @@ def render_csp_score_panel() -> None:
         st.warning(result.get("msg", "Unable to score ticker."))
         return
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Score", _fmt(result["score_total"], "{:.1f}/100"))
-    c2.metric("Stance", result.get("stance", "N/A"))
-    c3.metric("Price", _fmt(result["price"], "{:.2f}"))
-    c4.metric("DTE target", f"{target_dte} days")
+    summary_cols = st.columns(4)
+    summary_cols[0].metric("Score", _fmt(result["score_total"], "{:.1f}/100"))
+    summary_cols[1].metric("Stance", result.get("stance", "N/A"))
+    summary_cols[2].metric("Price", _fmt(result["price"], "{:.2f}"))
+    summary_cols[3].metric("DTE target", f"{target_dte} days")
 
-    st.markdown("**Suggested contract**")
-    s1, s2, s3, s4 = st.columns(4)
-    s1.metric("Expiry", result.get("expiry", "N/A"))
-    s2.metric("Strike", _fmt(result["strike"], "{:.2f}"))
-    s3.metric("|Delta|", _fmt(result["delta"], "{:.2f}"))
-    s4.metric("Mid", _fmt(result["mid"], "{:.2f}"))
+    st.divider()
 
-    st.markdown("**Premium / Liquidity**")
-    p1, p2, p3 = st.columns(3)
-    p1.metric("ATM IV", _fmt(result["IV_atm_%"], "{:.1f}%"))
-    p2.metric("Spread %", _fmt(result["spread_%"], "{:.2f}"))
-    p3.metric("Open Interest", _fmt(result["OI"], "{:.0f}"))
+    left_section, right_section = st.columns(2)
 
-    st.markdown("**Safety**")
-    t1, t2, t3, t4 = st.columns(4)
-    t1.metric("% OTM", _fmt(result["%OTM"], "{:.2f}%"))
-    t2.metric("ATR(14) %", _fmt(result["ATR_%"], "{:.2f}"))
-    t3.metric("Buffer (ATR multiples)", _fmt(result["buffer_ATR_x"], "{:.2f}"))
-    t4.metric("vs 200d MA %", _fmt(result["MA200_%"], "{:.2f}"))
+    with left_section:
+        st.markdown("#### Suggested Contract")
+        contract_top = st.columns(2)
+        contract_top[0].metric("Expiry", result.get("expiry", "N/A"))
+        contract_top[1].metric("Strike", _fmt(result["strike"], "{:.2f}"))
+        contract_bottom = st.columns(2)
+        contract_bottom[0].metric("|Delta|", _fmt(result["delta"], "{:.2f}"))
+        contract_bottom[1].metric("Mid", _fmt(result["mid"], "{:.2f}"))
 
-    st.markdown("**Market Regime**")
-    r1, r2 = st.columns(2)
-    r1.metric("VIX Contango (3M − 1M)", _fmt(result["contango"], "{:.2f}"))
-    r2.metric("Breadth slope (RSP/SPY) %", _fmt(result["breadth_slope_%"], "{:.2f}"))
+        st.markdown("#### Premium & Liquidity")
+        premium_cols = st.columns(3)
+        premium_cols[0].metric("ATM IV", _fmt(result["IV_atm_%"], "{:.1f}%"))
+        premium_cols[1].metric("Spread %", _fmt(result["spread_%"], "{:.2f}"))
+        premium_cols[2].metric("Open Interest", _fmt(result["OI"], "{:.0f}"))
 
-    st.markdown("**Component scores**")
+    with right_section:
+        st.markdown("#### Safety")
+        safety_top = st.columns(2)
+        safety_top[0].metric("% OTM", _fmt(result["%OTM"], "{:.2f}%"))
+        safety_top[1].metric("ATR(14) %", _fmt(result["ATR_%"], "{:.2f}"))
+        safety_bottom = st.columns(2)
+        safety_bottom[0].metric("Buffer (ATR multiples)", _fmt(result["buffer_ATR_x"], "{:.2f}"))
+        safety_bottom[1].metric("vs 200d MA %", _fmt(result["MA200_%"], "{:.2f}"))
+
+        st.markdown("#### Market Regime")
+        regime_cols = st.columns(2)
+        regime_cols[0].metric("VIX Contango (3M - 1M)", _fmt(result["contango"], "{:.2f}"))
+        regime_cols[1].metric("Breadth slope (RSP/SPY) %", _fmt(result["breadth_slope_%"], "{:.2f}"))
+
+    st.divider()
+
+    st.markdown("#### Component Scores")
     component_df = pd.DataFrame(
         [
             {
